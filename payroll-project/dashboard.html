@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>УчетТруда — Рабочее пространство</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <div class="logo">УчетТруда <span id="userName" style="font-size: 1rem; color: #7f8c8d; margin-left: 15px; font-weight: normal;"></span></div>
+    </div>
+    <nav class="nav" id="mainNav">
+        <button class="nav-btn active" data-screen="summary" id="navSummary">Сводка</button>
+        <button class="nav-btn" data-screen="employees" id="navEmp">Сотрудники</button>
+        <button class="nav-btn" data-screen="calc" id="navCalc">Расчёты</button>
+        <button class="nav-btn" data-screen="paysheet">Ведомость</button>
+    </nav>
+    <div class="header-right">
+        <a href="#" class="exit-btn" id="logoutBtn">Выход</a>
+    </div>
+</header>
+
+<main class="main-content">
+    <!-- Сводка (Только бух) -->
+    <section id="summary" class="screen active">
+        <div class="section-header"><h2>Аналитика и Журнал</h2></div>
+        <div class="calc-container">
+            <div class="chart-container" style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;">Фонд оплаты труда по должностям</h3>
+                <canvas id="salaryChart"></canvas>
+            </div>
+            <div class="logs-container" style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 400px; overflow-y: auto;">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;">Журнал операций (Аудит)</h3>
+                <ul id="auditLogs" style="list-style: none; font-size: 0.85rem; color: #475569;"></ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Сотрудники (Только бух) -->
+    <section id="employees" class="screen">
+        <div class="section-header">
+            <h2>Сотрудники</h2>
+            <input type="text" id="searchEmp" class="search-input" placeholder="Поиск по ФИО или Таб. номеру...">
+            <div class="actions">
+                <button class="btn btn-primary" id="addEmpBtn">+ Добавить сотрудника</button>
+                <button class="btn btn-secondary" id="exportBtn">Экспорт CSV</button>
+            </div>
+        </div>
+        <div class="stats" id="empStats"></div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>№</th><th>Таб. номер</th><th>ФИО</th><th>Должность</th><th>Оклад</th><th>Действия</th></tr></thead>
+                <tbody id="empTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Расчёты (Только бух) -->
+    <section id="calc" class="screen">
+        <div class="section-header"><h2>Расчёт заработной платы</h2></div>
+        <div class="calc-container">
+            <div class="calc-form">
+                <h3>Параметры расчёта</h3>
+                <div class="form-group"><label>Сотрудник</label><select id="calcEmp"></select></div>
+                <div class="form-group"><label>Месяц</label><select id="calcMonth"><option value="Октябрь">Октябрь</option><option value="Ноябрь">Ноябрь</option></select></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Отработано дней</label><input type="number" id="calcDays" value="22" min="0"></div>
+                    <div class="form-group"><label>Рабочих дней по норме</label><input type="number" id="calcNorm" value="22" min="1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Премия, ₽</label><input type="number" id="calcBonus" value="0" min="0"></div>
+                    <div class="form-group"><label>Удержания, ₽</label><input type="number" id="calcDed" value="0" min="0"></div>
+                </div>
+                <button class="btn btn-primary btn-full" id="calcBtn">Рассчитать</button>
+            </div>
+            <div class="calc-result">
+                <h3>Результат расчёта</h3>
+                <div class="result-item"><span>Оклад (база):</span><span id="rBase" class="result-value">0 ₽</span></div>
+                <div class="result-item"><span>Премия:</span><span id="rBonus" class="result-value">0 ₽</span></div>
+                <div class="result-item"><span>Всего:</span><span id="rTotal" class="result-value">0 ₽</span></div>
+                <div class="result-item"><span>НДФЛ (13%):</span><span id="rNdf" class="result-value negative">0 ₽</span></div>
+                <div class="result-item"><span>Удержания:</span><span id="rDed" class="result-value negative">0 ₽</span></div>
+                <div class="result-item total"><span>К выплате:</span><span id="rNet" class="result-value">0 ₽</span></div>
+                <button class="btn btn-primary btn-full" id="savePayslipBtn">Сохранить</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ведомость -->
+    <section id="paysheet" class="screen">
+        <div class="section-header">
+            <h2 id="paysheetTitle">Платёжная ведомость</h2>
+            <input type="text" id="searchPay" class="search-input" placeholder="Поиск по месяцу или ФИО...">
+        </div>
+        <div class="stats" id="payStats"></div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>№</th><th>Сотрудник</th><th>Месяц</th><th>Начислено</th><th>НДФЛ</th><th>Удержания</th><th>К выплате</th><th>Действия</th></tr></thead>
+                <tbody id="payTable"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<!-- Шаблон PDF с печатью -->
+<div id="pdfTemplate" style="display: none; padding: 40px; font-family: sans-serif; color: #000; background: #fff;">
+    <h2 style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">Расчетный листок за <span id="pdfMonth"></span> 2026 г.</h2>
+    <p><strong>Сотрудник:</strong> <span id="pdfName"></span></p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px 0;">Оклад:</td><td style="text-align: right;" id="pdfBase"></td></tr>
+        <tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px 0;">Премия:</td><td style="text-align: right;" id="pdfBonus"></td></tr>
+        <tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px 0;"><strong>Итого:</strong></td><td style="text-align: right;"><strong id="pdfTotal"></strong></td></tr>
+        <tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px 0; color: #c0392b;">НДФЛ (13%):</td><td style="text-align: right; color: #c0392b;" id="pdfNdf"></td></tr>
+        <tr><td style="padding: 15px 0; font-size: 1.2rem;"><strong>К выплате:</strong></td><td style="text-align: right; font-size: 1.2rem; color: #27ae60;"><strong id="pdfNet"></strong></td></tr>
+    </table>
+    <!-- Фейковая печать -->
+    <div style="margin-top: 40px; display: flex; justify-content: flex-end; align-items: center; gap: 20px;">
+        <div><p style="font-size: 0.9rem;">Главный бухгалтер ___________</p></div>
+        <div style="border: 3px solid #2563eb; color: #2563eb; border-radius: 50%; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; font-weight: bold; transform: rotate(-15deg); opacity: 0.7;">УЧЕТ ТРУДА<br>ОДОБРЕНО</div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="empModal">
+    <div class="modal">
+        <div class="modal-header"><h3 id="modalTitle">Сотрудник</h3><button class="close-btn" id="closeModalBtn">&times;</button></div>
+        <input type="hidden" id="empId">
+        <div class="form-group"><label>Таб. номер</label><input type="text" id="empTab"></div>
+        <div class="form-group"><label>ФИО</label><input type="text" id="empName"></div>
+        <div class="form-group"><label>Должность</label><input type="text" id="empPos"></div>
+        <div class="form-group"><label>Оклад, ₽</label><input type="number" id="empSalary"></div>
+        <div class="modal-actions"><button class="btn btn-secondary" id="cancelModalBtn">Отмена</button><button class="btn btn-primary" id="saveEmpBtn">Сохранить</button></div>
+    </div>
+</div>
+<div class="toast" id="toast">Сохранено</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

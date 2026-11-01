@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>УчетТруда — Вход в систему</title>
+    <link rel="stylesheet" href="css/login.css">
+    <style>
+        .quick-login {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #cbd5e1;
+        }
+        .quick-login p {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .quick-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .btn-quick {
+            padding: 0.7rem;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-quick:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo-section">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2c3e50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                <h1>УчетТруда</h1>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Табельный номер</label>
+                    <input type="text" id="tabInput" required placeholder="001">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="passInput" required placeholder="123">
+                </div>
+                <div class="error-msg" id="errorMsg">Неверный табельный номер или пароль</div>
+                <button type="submit" class="login-btn">Войти в систему</button>
+            </form>
+
+            <div class="quick-login">
+                <p>Быстрый вход (Тест):</p>
+                <div class="quick-btns">
+                    <button type="button" class="btn-quick" onclick="quick('001')">Главбух (001)</button>
+                    <button type="button" class="btn-quick" onclick="quick('002')">Бухгалтер (002)</button>
+                    <button type="button" class="btn-quick" onclick="quick('003')">Рабочий (003)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/db.js"></script>
+    <script>
+        localStorage.removeItem('currentUser');
+
+        // Прибиваем функцию гвоздями к window, чтобы HTML её 100% видел
+        window.quick = function(tab) {
+            document.getElementById('tabInput').value = tab;
+            document.getElementById('passInput').value = '123';
+            window.login(tab, '123');
+        };
+
+        window.login = function(tab, pass) {
+            if (typeof db === 'undefined') {
+                alert('Критическая ошибка: файл db.js сломался или не подключен!');
+                return;
+            }
+            if (db.loginUser(tab, pass)) {
+                window.location.href = 'dashboard.html';
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        };
+
+        // Мягкая очистка кривой базы без падений
+        try {
+            if (typeof db !== 'undefined') {
+                const emps = db.getAllEmployees();
+                if (emps.length > 0 && !emps[0].pass) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            }
+        } catch (e) {
+            localStorage.clear();
+            location.reload();
+        }
+
+        // Блокируем перезагрузку страницы при нажатии Enter или кнопки
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            window.login(
+                document.getElementById('tabInput').value.trim(), 
+                document.getElementById('passInput').value.trim()
+            );
+        });
+    </script>
+</body>
+</html>
